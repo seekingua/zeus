@@ -158,45 +158,47 @@ public class FileManagerRpcImpl implements FileManagerService{
 
 	@Override
 	public List<FileModel> getCommonFiles(FileModel fm) {
-		List<FileModel> result=new ArrayList<FileModel>();
-		if(fm==null){
-			List<ZeusUser> users=userManager.getAllUsers();
-			for(ZeusUser zu:users){
-				//没有公共文档则不返回该用户
-				if(!hasCommonFiles(zu)){
-					continue;
-				}
-				FileModel model=new FileModel();
-				model.setAdmin(false);
-				model.setFolder(true);
-				model.setId(zu.getUid());
-				model.setName(zu.getName()+"("+zu.getUid()+")");
-				model.setOwner(zu.getUid());
-				
-				result.add(model);
-			}
-		}else if(fm.getId().contains("\\")){
-			List<FileDescriptor> files=fileManager.getUserFiles(fm.getId());
-			for(FileDescriptor fd:files){
-				if(fd.getName().equalsIgnoreCase(FileManager.SHARE)){
-					FileModel model=new FileModel();
-					model.setAdmin(false);
-					model.setFolder(fd.isFolder());
-					model.setId(fd.getId());
-					model.setName(fd.getName());
-					model.setOwner(fd.getOwner());
-					model.setParentId(fm.getId());
-					result.add(model);
-				}
-			}
-		}else{
-			List<FileDescriptor> files=fileManager.getSubFiles(fm.getId());
-			for(FileDescriptor fd:files){
-				FileModel model=convert(fd);
-				result.add(model);
-			}
-		}
-		return result;
+	    List<FileModel> result = new ArrayList<FileModel>();
+	    String shareId = null;
+	    if (fm == null) {
+	        List<ZeusUser> users = userManager.getAllUsers();
+	        for (ZeusUser zu : users) {
+	            // 没有公共文档则不返回该用户
+	            shareId = hasCommonFiles(zu);
+	            if (shareId == null) {
+	                continue;
+	            }
+	            FileModel model = new FileModel();
+	            model.setAdmin(false);
+	            model.setFolder(true);
+	            model.setId(shareId);
+	            model.setName(zu.getName() + "(" + zu.getUid() + ")");
+	            model.setOwner(zu.getUid());
+	
+	            result.add(model);
+	        }
+	    } else if (fm.getId().contains("\\")) {
+	        List<FileDescriptor> files = fileManager.getUserFiles(fm.getId());
+	        for (FileDescriptor fd : files) {
+	            if (fd.getName().equalsIgnoreCase(FileManager.SHARE)) {
+	                FileModel model = new FileModel();
+	                model.setAdmin(false);
+	                model.setFolder(fd.isFolder());
+	                model.setId(fd.getId());
+	                model.setName(fd.getName());
+	                model.setOwner(fd.getOwner());
+	                model.setParentId(fm.getId());
+	                result.add(model);
+	            }
+	        }
+	    } else {
+	        List<FileDescriptor> files = fileManager.getSubFiles(fm.getId());
+	        for (FileDescriptor fd : files) {
+	            FileModel model = convert(fd);
+	            result.add(model);
+	        }
+	    }
+	    return result;
 	}
 	
 	/**
@@ -204,19 +206,19 @@ public class FileManagerRpcImpl implements FileManagerService{
 	 * @param zu
 	 * @return
 	 */
-	private boolean hasCommonFiles(ZeusUser zu){
-		List<FileDescriptor> files=fileManager.getUserFiles(zu.getUid());
-		for(FileDescriptor fd:files){
-			if(fd.getName().equalsIgnoreCase(FileManager.SHARE)){
-				List<FileDescriptor> fds=fileManager.getSubFiles(fd.getId());
-				if(fds==null||fds.isEmpty()){
-					return false;
-				}else{
-					return true;
-				}
-			}
-		}
-		return false;
-	}
 
+	private String hasCommonFiles(ZeusUser zu) {
+	    List<FileDescriptor> files = fileManager.getUserFiles(zu.getUid());
+	    for (FileDescriptor fd : files) {
+	        if (fd.getName().equalsIgnoreCase(FileManager.SHARE)) {
+	            List<FileDescriptor> fds = fileManager.getSubFiles(fd.getId());
+	            if (fds == null || fds.isEmpty()) {
+	                return null;
+	            } else {
+	                return fd.getId();
+	            }
+	        }
+	    }
+	    return null;
+	}
 }
